@@ -18,9 +18,14 @@ var crypto =  require("crypto");
 // GET - Snippets - User specific   : /api/snippets/user/tags/:tag
 // GET  - Snippets -User specific  : /api/Snippets/user
 
-
+/************ First page of app *****************/
 router.get('/', function(req, res) {
     res.render("login");
+});
+
+/************ Sign up page link *****************/
+router.get('/api/signup', funtion(req, res){
+  res.render("signup");
 });
 
 /*********** GET Snippet based on tags ***********/
