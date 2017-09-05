@@ -11,6 +11,7 @@ var crypto =  require("crypto");
 // POST - SignUp          : /api/signup
 // POST  - Login          : /api/login
 // POST - Snippets         : /api/Snippets
+// GET - Login              :/login to app
 // GET - Snippets-language : /api/snippets/langs/:lang
 // GET - Snippets - Tags    : /api/snippets/tags/:tag
 // GET - Snippets - User specific   : /api/snippets/user/langs/:lang
@@ -18,7 +19,154 @@ var crypto =  require("crypto");
 // GET  - Snippets -User specific  : /api/Snippets/user
 
 
-/******** POST /signup *************/
+router.get('/', function(req, res) {
+    res.render("login");
+});
+
+/*********** GET Snippet based on tags ***********/
+router.get('/api/snippets/tags/:tag', function(req, res) {
+  models.snippets.findAll({
+    where: {
+      tags: {
+        $like: { $any: ['{' + req.params.tag + '}'] }
+      }
+    },
+    include: [{
+         model: models.users,
+         as: "user_snippets"
+       }]
+  }).then(function(snippets){
+    if(snippets){
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"success", data:snippets});
+    }
+    else {
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"failure", data:"No records available"});
+    }
+  })
+});
+
+/**** GET / Snippets - USER SPECIFIC *******/
+router.get('/api/snippets/user', function(req, res) {
+
+  models.snippets.findAll({
+    where: {
+        userid : 1 //req.session.id
+    },
+    include: [{
+         model: models.users,
+         as: "user_snippets"
+       }]
+  }).then(function(snippets){
+    if(snippets){
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"success", data:snippets});
+    }
+    else {
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"failure", data:"No records available"});
+    }
+  })
+});
+
+
+/**** GET / Snippets *******/
+router.get('/api/snippets', function(req, res) {
+
+  models.snippets.findAll({
+    where: {
+        userid: {$ne: null}
+    },
+    include: [{
+         model: models.users,
+         as: "user_snippets"
+       }]
+  }).then(function(snippets){
+    if(snippets){
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"success", data:snippets});
+    }
+    else {
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"failure", data:"No records available"});
+    }
+  })
+});
+
+/***** GET /snippets/lang - USER SPECIFIC ********/
+router.get('/api/snippets/user/langs/:lang', function(req, res) {
+  models.snippets.findOne({
+    where: {
+      language: req.params.lang,
+      userid: 1 // req.session.id
+    },
+    include: [{
+         model: models.users,
+         as: "user_snippets"
+       }]
+  }).then(function(snippets){
+    if(snippets){
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"success", data:snippets});
+    }
+    else {
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"failure", data:"No records available"});
+    }
+  })
+});
+
+/*********** GET Snippet based on tags - USER SPECIFIC  ***********/
+
+router.get('/api/snippets/user/tags/:tag', function(req, res) {
+  models.snippets.findAll({
+    where: {
+      userid: 1, // req.session.id
+      tags: {
+        $like: { $any: ['{' + req.params.tag + '}'] }
+      }
+    },
+    include: [{
+         model: models.users,
+         as: "user_snippets"
+       }]
+  }).then(function(snippets){
+    if(snippets){
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"success", data:snippets});
+    }
+    else {
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"failure", data:"No records available"});
+    }
+  })
+});
+
+/***** GET /snippets/lang  ********/
+router.get('/api/snippets/langs/:lang', function(req, res) {
+  models.snippets.findOne({
+    where: {
+      language: req.params.lang
+    },
+    include: [{
+         model: models.users,
+         as: "user_snippets"
+       }]
+  }).then(function(snippets){
+    if(snippets){
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"success", data:snippets});
+    }
+    else {
+      res.setHeader('Content-Typeorder', 'application/json');
+      res.json({status:"failure", data:"No records available"});
+    }
+  })
+});
+
+
+/******** POST /signup New Registration *************/
   router.post("/api/signup", function(req, res){
 
   let errors = "";
@@ -32,8 +180,7 @@ var crypto =  require("crypto");
       if(!result.isEmpty()){
         res.setHeader('Content-Typeorder', 'application/json');
         res.json({status:"failure", data:"No data found"});
-      //  res.render("signup",{ errors: result.array(),
-                              //sessionExist:req.session.username})
+
       }
       else{
             var hash_password = hashPassword(req.body.password);
@@ -60,7 +207,7 @@ var crypto =  require("crypto");
   });
 
 
-/******** POST / new registration *************/
+/******** POST / Login page *************/
   router.post('/api/login',function(req, res){
 
     let errors = "";
@@ -73,8 +220,7 @@ var crypto =  require("crypto");
       if(!result.isEmpty()){
         res.setHeader('Content-Typeorder', 'application/json');
         res.json({status:"failure", data:result});
-        //res.render("login",{ errors: result.array(),
-                              //sessionExist:req.session.username})
+
       }
       else{
         models.users.findOne({username: req.body.username})
@@ -114,29 +260,6 @@ var crypto =  require("crypto");
         }
       });
   });
-
-/**** GET / Snippets *******/
-router.get('/api/snippets', function(req, res) {
-
-  models.snippets.findAll({
-    where: {
-        userid: {$ne: null}
-    },
-    include: [{
-         model: models.users,
-         as: "user_snippets"
-       }]
-  }).then(function(snippets){
-    if(snippets){
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"success", data:snippets});
-    }
-    else {
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"failure", data:"No records available"});
-    }
-})
-});
 
 /*********** POST /snippets  ************/
 router.post('/api/snippets', function(req, res) {
@@ -179,125 +302,6 @@ router.post('/api/snippets', function(req, res) {
       //res.render("login", {sessionExist:req.session.username});
     });
   }
-});
-
-/***** GET /snippets/lang  ********/
-router.get('/api/snippets/langs/:lang', function(req, res) {
-  models.snippets.findOne({
-    where: {
-      language: req.params.lang
-    },
-    include: [{
-         model: models.users,
-         as: "user_snippets"
-       }]
-  }).then(function(snippets){
-    if(snippets){
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"success", data:snippets});
-    }
-    else {
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"failure", data:"No records available"});
-    }
-})
-});
-
-/*********** GET Snippet based on tags ***********/
-router.get('/api/snippets/tags/:tag', function(req, res) {
-  models.snippets.findAll({
-    where: {
-      tags: {
-        $like: { $any: ['{' + req.params.tag + '}'] }
-      }
-    },
-    include: [{
-         model: models.users,
-         as: "user_snippets"
-       }]
-  }).then(function(snippets){
-    if(snippets){
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"success", data:snippets});
-    }
-    else {
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"failure", data:"No records available"});
-    }
-})
-});
-
-
-/**** GET / Snippets - USER SPECIFIC *******/
-router.get('/api/snippets/user', function(req, res) {
-
-  models.snippets.findAll({
-    where: {
-        userid : 1 //req.session.id
-    },
-    include: [{
-         model: models.users,
-         as: "user_snippets"
-       }]
-  }).then(function(snippets){
-    if(snippets){
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"success", data:snippets});
-    }
-    else {
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"failure", data:"No records available"});
-    }
-})
-});
-
-/***** GET /snippets/lang - USER SPECIFIC ********/
-router.get('/api/snippets/user/langs/:lang', function(req, res) {
-  models.snippets.findOne({
-    where: {
-      language: req.params.lang,
-      userid: 1 // req.session.id
-    },
-    include: [{
-         model: models.users,
-         as: "user_snippets"
-       }]
-  }).then(function(snippets){
-    if(snippets){
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"success", data:snippets});
-    }
-    else {
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"failure", data:"No records available"});
-    }
-})
-});
-
-/*********** GET Snippet based on tags - USER SPECIFIC  ***********/
-
-router.get('/api/snippets/user/tags/:tag', function(req, res) {
-  models.snippets.findAll({
-    where: {
-      userid: 1, // req.session.id
-      tags: {
-        $like: { $any: ['{' + req.params.tag + '}'] }
-      }
-    },
-    include: [{
-         model: models.users,
-         as: "user_snippets"
-       }]
-  }).then(function(snippets){
-    if(snippets){
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"success", data:snippets});
-    }
-    else {
-      res.setHeader('Content-Typeorder', 'application/json');
-      res.json({status:"failure", data:"No records available"});
-    }
-})
 });
 
 /*********** For Hash Password :  crypto.pbkdf2Sync ******/

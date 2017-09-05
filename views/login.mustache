@@ -1,1 +1,11 @@
-<p>Login</p>
+{{#errors}}
+<h1>{{.}}</h1>
+{{/errors}}
+
+<form action="/api/login" method="post">
+  <input type="text" name="username" placeholder="username"><br>
+  <input type="password" name="password" placeholder="password"><br>
+  <button type="submit" name="button">Sign In</button>
+</form>
+<br><br>
+<a href="/api/signup">Sign Up</a>
