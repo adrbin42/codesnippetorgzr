@@ -24,7 +24,7 @@ router.get('/', function(req, res) {
 });
 
 /************ Sign up page link *****************/
-router.get('/api/signup', funtion(req, res){
+router.get('/api/signup', function(req, res) {
   res.render("signup");
 });
 
